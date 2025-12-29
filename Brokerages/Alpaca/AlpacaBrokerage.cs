@@ -47,6 +47,11 @@ namespace QuantConnect.Brokerages.Alpaca
     /// <remarks>
     /// SECURITY: This implementation enforces TLS 1.2/1.3, uses secure credential handling,
     /// and never logs sensitive information like API keys or secrets.
+    ///
+    /// PREMIUM FEATURES (requires paid Alpaca subscription):
+    /// - Real-time and historical news data via NewsProvider
+    /// - Corporate actions (dividends, splits, spinoffs) via CorporateActionsProvider
+    /// - Extended historical data with granular timeframes via HistoryProvider
     /// </remarks>
     public class AlpacaBrokerage : BaseWebsocketsBrokerage, IDataQueueHandler
     {
@@ -55,6 +60,11 @@ namespace QuantConnect.Brokerages.Alpaca
         private readonly bool _isPaperTrading;
         private readonly AlpacaSymbolMapper _symbolMapper;
         private readonly IAlgorithm _algorithm;
+
+        // Premium feature providers
+        private AlpacaNewsProvider _newsProvider;
+        private AlpacaCorporateActionsProvider _corporateActionsProvider;
+        private AlpacaHistoryProvider _historyProvider;
 
         private HttpClient _httpClient;
         private ClientWebSocket _tradingWebSocket;
@@ -68,6 +78,21 @@ namespace QuantConnect.Brokerages.Alpaca
         private volatile bool _isConnected;
         private Task _tradingMessageTask;
         private Task _dataMessageTask;
+
+        /// <summary>
+        /// Gets the News Provider for real-time and historical news data (premium feature)
+        /// </summary>
+        public AlpacaNewsProvider NewsProvider => _newsProvider ??= new AlpacaNewsProvider(_apiKey, _apiSecret);
+
+        /// <summary>
+        /// Gets the Corporate Actions Provider for dividends, splits, and spinoffs (premium feature)
+        /// </summary>
+        public AlpacaCorporateActionsProvider CorporateActionsProvider => _corporateActionsProvider ??= new AlpacaCorporateActionsProvider(_apiKey, _apiSecret);
+
+        /// <summary>
+        /// Gets the History Provider for extended historical data (premium feature)
+        /// </summary>
+        public AlpacaHistoryProvider HistoryProvider => _historyProvider ??= new AlpacaHistoryProvider(_apiKey, _apiSecret);
 
         // API Endpoints
         private string TradingApiUrl => _isPaperTrading
@@ -823,11 +848,17 @@ namespace QuantConnect.Brokerages.Alpaca
         #endregion
 
         /// <summary>
-        /// Disposes the brokerage
+        /// Disposes the brokerage and all premium providers
         /// </summary>
         public override void Dispose()
         {
             Disconnect();
+
+            // Dispose premium feature providers
+            _newsProvider?.Dispose();
+            _corporateActionsProvider?.Dispose();
+            _historyProvider?.Dispose();
+
             _cancellationTokenSource?.Dispose();
             base.Dispose();
         }
