@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using QuantConnect.Util;
 using System.IO;
 using System.Threading;
+using System.Net.Security;
+using System.Security.Authentication;
 
 namespace QuantConnect.Api
 {
@@ -99,7 +101,20 @@ namespace QuantConnect.Api
                 _httpClient.DisposeSafely();
             }
 
-            _httpClient = new HttpClient() { BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/") };
+            // SECURITY HARDENING: Configure HttpClient with secure TLS settings
+            var handler = new SocketsHttpHandler
+            {
+                // Only allow TLS 1.2 and 1.3 - disable older insecure protocols
+                SslOptions = new SslClientAuthenticationOptions
+                {
+                    EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+                },
+                // Connection pooling for efficiency
+                PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(5)
+            };
+
+            _httpClient = new HttpClient(handler) { BaseAddress = new Uri($"{baseUrl.TrimEnd('/')}/") };
             Client = new RestClient(baseUrl);
 
             if (defaultHeaders != null)

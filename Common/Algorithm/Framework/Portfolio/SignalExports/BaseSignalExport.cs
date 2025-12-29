@@ -17,6 +17,7 @@ using QuantConnect.Interfaces;
 using QuantConnect.Util;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 
 namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
@@ -27,9 +28,34 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
     public abstract class BaseSignalExport : ISignalExportTarget
     {
         /// <summary>
-        /// Lazy initialization of HttpClient to be used to sent signals to different 3rd party API's
+        /// SECURITY HARDENING: Create HttpClient with secure configuration
+        /// - Enforces TLS 1.2/1.3 for encrypted communications
+        /// - Sets reasonable timeout to prevent hanging connections
+        /// - Uses a SocketsHttpHandler for better connection management
         /// </summary>
-        private Lazy<HttpClient> _lazyClient = new Lazy<HttpClient>();
+        private Lazy<HttpClient> _lazyClient = new Lazy<HttpClient>(() =>
+        {
+            var handler = new SocketsHttpHandler
+            {
+                // SECURITY: Only allow TLS 1.2 and 1.3, disable older insecure protocols
+                SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+                {
+                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
+                },
+                // Connection pooling settings for efficiency
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+                MaxConnectionsPerServer = 10
+            };
+
+            var client = new HttpClient(handler)
+            {
+                // SECURITY: Set reasonable timeout to prevent resource exhaustion
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+
+            return client;
+        });
 
         /// <summary>
         /// List of all SecurityTypes present in LEAN

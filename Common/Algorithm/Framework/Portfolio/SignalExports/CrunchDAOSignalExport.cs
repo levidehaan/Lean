@@ -90,7 +90,9 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
             _model = model;
             _submissionName = submissionName;
             _comment = comment;
-            _destination = new Uri($"https://api.tournament.crunchdao.com/v3/alpha-submissions?apiKey={apiKey}");
+            // SECURITY FIX: API key moved from URL to Authorization header
+            // Putting credentials in URLs is insecure (logged in server logs, cached, visible in referrer headers)
+            _destination = new Uri("https://api.tournament.crunchdao.com/v3/alpha-submissions");
         }
 
         /// <summary>
@@ -188,8 +190,15 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
                 { file, "file", "submission.csv" }
             };
 
+            // SECURITY FIX: Add API key in Authorization header instead of URL query string
+            using var request = new HttpRequestMessage(HttpMethod.Post, _destination)
+            {
+                Content = httpMessage
+            };
+            request.Headers.Add("X-API-Key", _apiKey);
+
             // Send the httpMessage
-            using HttpResponseMessage response = HttpClient.PostAsync(_destination, httpMessage).Result;
+            using HttpResponseMessage response = HttpClient.SendAsync(request).Result;
             if (response.StatusCode == System.Net.HttpStatusCode.Locked || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
             {
                 var responseContent = response.Content.ReadAsStringAsync().Result;
@@ -245,7 +254,10 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
         /// <returns>True if there's a submission for the current round, false otherwise</returns>
         private bool GetLastSubmissionId(int currentRoundId, out int lastSubmissionId)
         {
-            using HttpResponseMessage submissionIdResponse = HttpClient.GetAsync($"https://tournament.crunchdao.com/api/v3/alpha-submissions?includeAll=false&roundId={currentRoundId}&apiKey={_apiKey}").Result;
+            // SECURITY FIX: API key moved from URL to header
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"https://tournament.crunchdao.com/api/v3/alpha-submissions?includeAll=false&roundId={currentRoundId}");
+            request.Headers.Add("X-API-Key", _apiKey);
+            using HttpResponseMessage submissionIdResponse = HttpClient.SendAsync(request).Result;
 
             if (!submissionIdResponse.IsSuccessStatusCode)
             {
@@ -274,7 +286,10 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
         /// <returns>True if the last submission could be deleted sucessfully, false otherwise</returns>
         private bool DeleteLastSubmission(int lastSubmissionId)
         {
-            using HttpResponseMessage deleteSubmissionResponse = HttpClient.DeleteAsync($"https://tournament.crunchdao.com/api/v3/alpha-submissions/{lastSubmissionId}?&apiKey={_apiKey}").Result;
+            // SECURITY FIX: API key moved from URL to header
+            using var request = new HttpRequestMessage(HttpMethod.Delete, $"https://tournament.crunchdao.com/api/v3/alpha-submissions/{lastSubmissionId}");
+            request.Headers.Add("X-API-Key", _apiKey);
+            using HttpResponseMessage deleteSubmissionResponse = HttpClient.SendAsync(request).Result;
             if (!deleteSubmissionResponse.IsSuccessStatusCode)
             {
                 var responseContent = deleteSubmissionResponse.Content.ReadAsStringAsync().Result;
