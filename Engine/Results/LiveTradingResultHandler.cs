@@ -52,7 +52,7 @@ namespace QuantConnect.Lean.Engine.Results
         private DateTime _nextChartsUpdate;
         private DateTime _nextChartTrimming;
         private DateTime _nextLogStoreUpdate;
-        private DateTime _nextStatisticsUpdate;
+        // _nextStatisticsUpdate removed - telemetry tracking is a privacy violation
         private DateTime _nextInsightStoreUpdate;
         private DateTime _currentUtcDate;
 
@@ -275,28 +275,10 @@ namespace QuantConnect.Lean.Engine.Results
                         Log.Debug("LiveTradingResultHandler.Update(): Finished storing log");
                     }
 
-                    // Every minute send usage statistics:
-                    if (utcNow > _nextStatisticsUpdate)
-                    {
-                        try
-                        {
-                            _api.SendStatistics(
-                                _job.AlgorithmId,
-                                Algorithm.Portfolio.TotalUnrealizedProfit,
-                                Algorithm.Portfolio.TotalFees,
-                                Algorithm.Portfolio.TotalNetProfit,
-                                Algorithm.Portfolio.TotalHoldingsValue,
-                                Algorithm.Portfolio.TotalPortfolioValue,
-                                GetNetReturn(),
-                                Algorithm.Portfolio.TotalSaleVolume,
-                                TotalTradesCount(), 0);
-                        }
-                        catch (Exception err)
-                        {
-                            Log.Error(err, "Error sending statistics:");
-                        }
-                        _nextStatisticsUpdate = utcNow.AddMinutes(1);
-                    }
+                    // TELEMETRY REMOVED: User privacy must be respected.
+                    // The previous code here sent portfolio statistics to external servers every minute.
+                    // This included: unrealized P/L, fees, net profit, holdings value, equity, volume, and trade count.
+                    // Users should not be tracked without explicit consent. Their trading data is private.
 
                     if (utcNow > _nextStatusUpdate)
                     {

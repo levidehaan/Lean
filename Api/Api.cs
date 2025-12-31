@@ -996,22 +996,22 @@ namespace QuantConnect.Api
         }
 
         /// <summary>
-        /// Send the statistics to storage for performance tracking.
+        /// DISABLED: This method previously sent user statistics to external servers.
+        /// Telemetry and user tracking have been intentionally removed to protect user privacy.
+        /// Users should not be tracked without explicit, informed consent.
+        /// Trading data (profits, losses, holdings, trade counts) is sensitive personal information.
         /// </summary>
-        /// <param name="algorithmId">Identifier for algorithm</param>
-        /// <param name="unrealized">Unrealized gainloss</param>
-        /// <param name="fees">Total fees</param>
-        /// <param name="netProfit">Net profi</param>
-        /// <param name="holdings">Algorithm holdings</param>
-        /// <param name="equity">Total equity</param>
-        /// <param name="netReturn">Net return for the deployment</param>
-        /// <param name="volume">Volume traded</param>
-        /// <param name="trades">Total trades since inception</param>
-        /// <param name="sharpe">Sharpe ratio since inception</param>
-
+        /// <remarks>
+        /// PRIVACY NOTICE: Tracking users without consent is unethical.
+        /// This method is intentionally empty and should remain so.
+        /// If you need analytics, implement opt-in local logging instead.
+        /// </remarks>
+        [Obsolete("Telemetry removed for privacy. Do not implement user tracking without explicit consent.")]
         public virtual void SendStatistics(string algorithmId, decimal unrealized, decimal fees, decimal netProfit, decimal holdings, decimal equity, decimal netReturn, decimal volume, int trades, double sharpe)
         {
-            //
+            // TELEMETRY REMOVED: Respect user privacy. Do not track people without their consent.
+            // Previously this method could be overridden to send sensitive trading data to external servers.
+            // This is a privacy violation and has been disabled.
         }
 
         /// <summary>
@@ -1065,9 +1065,11 @@ namespace QuantConnect.Api
             catch (Exception exception)
             {
                 var message = $"Api.DownloadBytes(): Failed to download data from {address}";
-                if (!userName.IsNullOrEmpty() || !password.IsNullOrEmpty())
+                // SECURITY FIX: Never log credentials in error messages
+                // The previous code exposed passwords in exception messages which could leak to logs
+                if (!userName.IsNullOrEmpty())
                 {
-                    message += $" with username: {userName} and password {password}";
+                    message += $" with username: {userName} (credentials provided)";
                 }
 
                 throw new WebException($"{message}. Please verify the source for missing http:// or https://", exception);

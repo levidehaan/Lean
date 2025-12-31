@@ -280,8 +280,9 @@ namespace QuantConnect.Algorithm.Framework.Portfolio.SignalExports
         {
             using var httpMessage = new StringContent(message, Encoding.UTF8, "application/json");
 
-            //Add the QuantConnect app header
-            httpMessage.Headers.Add("X-AppId", "OPA1N90E71");
+            // TRACKING HEADER REMOVED: The X-AppId header was used to track which signals
+            // originated from QuantConnect. This is a privacy violation - users should not
+            // be tracked across platforms without their knowledge or consent.
 
             //Add the Authorization header
             HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);

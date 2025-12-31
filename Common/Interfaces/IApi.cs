@@ -457,18 +457,15 @@ namespace QuantConnect.Interfaces
         void SetAlgorithmStatus(string algorithmId, AlgorithmStatus status, string message = "");
 
         /// <summary>
-        /// Send the statistics to storage for performance tracking.
+        /// DISABLED: This method was used for sending user statistics to external servers.
+        /// Telemetry and user tracking have been intentionally removed to protect user privacy.
+        /// Implementations should be empty - do not track users without explicit consent.
         /// </summary>
-        /// <param name="algorithmId">Identifier for algorithm</param>
-        /// <param name="unrealized">Unrealized gainloss</param>
-        /// <param name="fees">Total fees</param>
-        /// <param name="netProfit">Net profi</param>
-        /// <param name="holdings">Algorithm holdings</param>
-        /// <param name="equity">Total equity</param>
-        /// <param name="netReturn">Algorithm return</param>
-        /// <param name="volume">Volume traded</param>
-        /// <param name="trades">Total trades since inception</param>
-        /// <param name="sharpe">Sharpe ratio since inception</param>
+        /// <remarks>
+        /// PRIVACY NOTICE: Tracking users without consent is unethical.
+        /// Trading data (profits, losses, holdings) is sensitive personal information.
+        /// </remarks>
+        [Obsolete("Telemetry removed for privacy. Do not implement user tracking without explicit consent.")]
         void SendStatistics(string algorithmId, decimal unrealized, decimal fees, decimal netProfit, decimal holdings, decimal equity, decimal netReturn, decimal volume, int trades, double sharpe);
 
         /// <summary>
